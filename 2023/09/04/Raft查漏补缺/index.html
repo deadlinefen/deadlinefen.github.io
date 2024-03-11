@@ -6,57 +6,57 @@
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport" />
     <meta name="description" content="Raft查漏补缺-好久没看而忘记的知识" />
     <meta name="hexo-theme-A4" content="v1.8.8" />
-    <link rel="alternate icon" type="image/webp" href="/blog/img/frog.png">
+    <link rel="alternate icon" type="image/webp" href="/img/frog.png">
     <title>HappyFishingTime | 快乐的摸鱼时刻</title>
 
     
         
-<link rel="stylesheet" href="/blog/css/highlight/style1.css">
+<link rel="stylesheet" href="/css/highlight/style1.css">
 
         
-<link rel="stylesheet" href="/blog/css/reset.css">
+<link rel="stylesheet" href="/css/reset.css">
 
         
-<link rel="stylesheet" href="/blog/css/markdown.css">
+<link rel="stylesheet" href="/css/markdown.css">
 
         
-<link rel="stylesheet" href="/blog/css/fonts.css">
+<link rel="stylesheet" href="/css/fonts.css">
  
          <!--注意：首页既不是post也不是page-->
         
         
         
-<link rel="stylesheet" href="/blog/css/ui.css">
+<link rel="stylesheet" href="/css/ui.css">
  
         
-<link rel="stylesheet" href="/blog/css/style.css">
+<link rel="stylesheet" href="/css/style.css">
 
 
         
             <!--返回顶部css-->
             
-<link rel="stylesheet" href="/blog/css/returnToTop.css">
+<link rel="stylesheet" href="/css/returnToTop.css">
 
             
-<link rel="stylesheet" href="/blog/css/unicons.css">
+<link rel="stylesheet" href="/css/unicons.css">
 
         
         
             <!--目录-->
             
-<link rel="stylesheet" href="/blog/css/toc.css">
+<link rel="stylesheet" href="/css/toc.css">
 
         
     
 
     
         
-<link rel="stylesheet" href="/blog/css/returnToLastPage.css">
+<link rel="stylesheet" href="/css/returnToLastPage.css">
 
     
     
    
-<link rel="stylesheet" href="/blog/css/lightgallery.min.css">
+<link rel="stylesheet" href="/css/lightgallery.min.css">
 
 
 <meta name="generator" content="Hexo 7.1.1"></head>
@@ -81,9 +81,9 @@
     <div class="header-container">
         <img style="
         width: 56px;
-        height: auto;" alt="^-^" cache-control="max-age=86400" class="header-img" src="/blog/img/frog.png" width="10%"></img>
+        height: auto;" alt="^-^" cache-control="max-age=86400" class="header-img" src="/img/frog.png" width="10%"></img>
         <div class="header-content">
-            <a class="logo" href="/blog/">HappyFishingTime</a> 
+            <a class="logo" href="/">HappyFishingTime</a> 
             <span class="description">摸鱼幻♂想♂乡，论文、技术总结与牢骚</span> 
         </div>
         
@@ -93,23 +93,23 @@
     <ul class="nav">
         
             
-                <li><a href="/blog/">首页</a></li>
+                <li><a href="/">首页</a></li>
             
         
             
-                <li><a href="/blog/list/">文章</a></li>
+                <li><a href="/list/">文章</a></li>
             
         
             
-                <li><a href="/blog/tags/">标签</a></li>
+                <li><a href="/tags/">标签</a></li>
             
         
             
-                <li><a href="/blog/categories/">分类</a></li>
+                <li><a href="/categories/">分类</a></li>
             
         
             
-                <li><a href="/blog/project/">摸鱼项目</a></li>
+                <li><a href="/project/">摸鱼项目</a></li>
             
         
     </ul>
@@ -140,7 +140,7 @@
         
         <link rel="stylesheet" type="text/css" href="https://jsd.onmicrosoft.cn/npm/hexo-theme-a4@latest/source/css/lightgallery.min.css" /><div class=".article-gallery"><p><strong>写在前面：</strong></p>
 <p>腾讯TDSQL管控二面，虽然整体答得还可以，但是raft的记忆缺失比较严重，尤其是联合一致部分，我只记得三个状态，细节忘记了，这里再查漏补缺，回忆一下raft。</p>
-<h1 id="Raft查漏补缺"><a href="#Raft查漏补缺" class="headerlink" title="Raft查漏补缺"></a>Raft查漏补缺</h1><h2 id="1-状态机转移图"><a href="#1-状态机转移图" class="headerlink" title="1. 状态机转移图"></a>1. 状态机转移图</h2><p><a href="/blog/img/2023-9/state_mechine.png" title="state_mechine" class="gallery-item" style="box-shadow: none;"> <img src="/blog/img/2023-9/state_mechine.png" alt="state_mechine"></a></p>
+<h1 id="Raft查漏补缺"><a href="#Raft查漏补缺" class="headerlink" title="Raft查漏补缺"></a>Raft查漏补缺</h1><h2 id="1-状态机转移图"><a href="#1-状态机转移图" class="headerlink" title="1. 状态机转移图"></a>1. 状态机转移图</h2><p><a href="/img/2023-9/state_mechine.png" title="state_mechine" class="gallery-item" style="box-shadow: none;"> <img src="/img/2023-9/state_mechine.png" alt="state_mechine"></a></p>
 <h2 id="2-阻止选票瓜分（或者说解决活锁问题）"><a href="#2-阻止选票瓜分（或者说解决活锁问题）" class="headerlink" title="2. 阻止选票瓜分（或者说解决活锁问题）"></a>2. 阻止选票瓜分（或者说解决活锁问题）</h2><ul>
 <li>随机超时，使不同的candidate发起选举的时间错开</li>
 <li>pre-vote</li>
@@ -170,7 +170,7 @@
 <li>只能提交当前任期的日志，旧任期的日志通过复制来达成一致。</li>
 </ul>
 <p>原因是旧任期的日志即使被复制到了多数也可能被新的leader覆盖，如图所示：</p>
-<p><a href="/blog/img/2023-9/log_safty.png" title="log_safty" class="gallery-item" style="box-shadow: none;"> <img src="/blog/img/2023-9/log_safty.png" alt="log_safty"></a></p>
+<p><a href="/img/2023-9/log_safty.png" title="log_safty" class="gallery-item" style="box-shadow: none;"> <img src="/img/2023-9/log_safty.png" alt="log_safty"></a></p>
 <p>在 (a) 中，S1 是 leader ，部分地复制了索引位置 2 的日志条目。</p>
 <p>在 (b) 中，S1 崩溃了，然后 S5 在任期 3 中通过 S3、S4 和自己的选票赢得选举，然后从客户端接收了一条不一样的日志条目放在了索引 2 处。</p>
 <p>然后到 (c)，S5 又崩溃了；S1 重新启动，选举成功，继续复制日志。此时，来自任期 2 的那条日志已经被复制到了集群中的大多数机器上，但是还没有被提交。</p>
@@ -181,10 +181,10 @@
 </ul>
 <h2 id="5-成员变更"><a href="#5-成员变更" class="headerlink" title="5. 成员变更"></a>5. 成员变更</h2><p>联合一致（联合共识）算法</p>
 <p>如果将配置变更操作交由一条日志来做的话会存在图中的问题：</p>
-<p><a href="/blog/img/2023-9/change_conflict.png" title="change_conflict" class="gallery-item" style="box-shadow: none;"> <img src="/blog/img/2023-9/change_conflict.png" alt="change_conflict"></a></p>
+<p><a href="/img/2023-9/change_conflict.png" title="change_conflict" class="gallery-item" style="box-shadow: none;"> <img src="/img/2023-9/change_conflict.png" alt="change_conflict"></a></p>
 <p>在箭头所示的时间节点，S1和S2可以在旧配置下选出leader，S3, 4, 5可以在新配置下选出leader，这样就发生了脑裂。</p>
 <p>解决方法就是引入联合一致态：</p>
-<p><a href="/blog/img/2023-9/join_consist.png" title="join_consist" class="gallery-item" style="box-shadow: none;"> <img src="/blog/img/2023-9/join_consist.png" alt="join_consist"></a></p>
+<p><a href="/img/2023-9/join_consist.png" title="join_consist" class="gallery-item" style="box-shadow: none;"> <img src="/img/2023-9/join_consist.png" alt="join_consist"></a></p>
 <p>大致的流程：</p>
 <ul>
 <li>leader收到新配置后，会添加C-old,new日志，添加了C-old, new日志的节点会用该配置来做决策。又因为leader有C-old, new日志，因此C-old, new会按照新配置进行日志commit判定<ul>
@@ -213,11 +213,11 @@
                 <span>打上标签:
                     
                     
-                        <a href='/blog/tags/Raft/'>
+                        <a href='/tags/Raft/'>
                             Raft
                         </a>
                     
-                        <a href='/blog/tags/log/'>
+                        <a href='/tags/log/'>
                             log
                         </a>
                     
@@ -227,7 +227,7 @@
                 <span>归为分类:
                     
                     
-                        <a href='/blog/categories/%E6%95%A3%E8%A3%85%E6%8A%80%E6%9C%AF/'>
+                        <a href='/categories/%E6%95%A3%E8%A3%85%E6%8A%80%E6%9C%AF/'>
                             散装技术
                         </a>
                     
@@ -286,23 +286,23 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js" type="text/javascript" ></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tocify/1.9.0/javascripts/jquery.tocify.min.js" type="text/javascript" ></script>
         
-<script src="/blog/js/toc.js"></script>
+<script src="/js/toc.js"></script>
 
     
 
     
-<script src="/blog/js/randomHeaderContent.js"></script>
+<script src="/js/randomHeaderContent.js"></script>
 
     <!--回到顶部按钮-->
     
         
-<script src="/blog/js/returnToTop.js"></script>
+<script src="/js/returnToTop.js"></script>
 
     
 
     
         
-<script src="/blog/js/returnToLastPage.js"></script>
+<script src="/js/returnToLastPage.js"></script>
 
     
 
@@ -310,7 +310,7 @@
 
 
 
-<script src="/blog/js/lightgallery.min.js"></script>
+<script src="/js/lightgallery.min.js"></script>
 
 
 

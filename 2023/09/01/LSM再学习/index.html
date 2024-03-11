@@ -6,57 +6,57 @@
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport" />
     <meta name="description" content="LSM再学习-Compaction与Write stalls" />
     <meta name="hexo-theme-A4" content="v1.8.8" />
-    <link rel="alternate icon" type="image/webp" href="/blog/img/frog.png">
+    <link rel="alternate icon" type="image/webp" href="/img/frog.png">
     <title>HappyFishingTime | 快乐的摸鱼时刻</title>
 
     
         
-<link rel="stylesheet" href="/blog/css/highlight/style1.css">
+<link rel="stylesheet" href="/css/highlight/style1.css">
 
         
-<link rel="stylesheet" href="/blog/css/reset.css">
+<link rel="stylesheet" href="/css/reset.css">
 
         
-<link rel="stylesheet" href="/blog/css/markdown.css">
+<link rel="stylesheet" href="/css/markdown.css">
 
         
-<link rel="stylesheet" href="/blog/css/fonts.css">
+<link rel="stylesheet" href="/css/fonts.css">
  
          <!--注意：首页既不是post也不是page-->
         
         
         
-<link rel="stylesheet" href="/blog/css/ui.css">
+<link rel="stylesheet" href="/css/ui.css">
  
         
-<link rel="stylesheet" href="/blog/css/style.css">
+<link rel="stylesheet" href="/css/style.css">
 
 
         
             <!--返回顶部css-->
             
-<link rel="stylesheet" href="/blog/css/returnToTop.css">
+<link rel="stylesheet" href="/css/returnToTop.css">
 
             
-<link rel="stylesheet" href="/blog/css/unicons.css">
+<link rel="stylesheet" href="/css/unicons.css">
 
         
         
             <!--目录-->
             
-<link rel="stylesheet" href="/blog/css/toc.css">
+<link rel="stylesheet" href="/css/toc.css">
 
         
     
 
     
         
-<link rel="stylesheet" href="/blog/css/returnToLastPage.css">
+<link rel="stylesheet" href="/css/returnToLastPage.css">
 
     
     
    
-<link rel="stylesheet" href="/blog/css/lightgallery.min.css">
+<link rel="stylesheet" href="/css/lightgallery.min.css">
 
 
 <meta name="generator" content="Hexo 7.1.1"></head>
@@ -81,9 +81,9 @@
     <div class="header-container">
         <img style="
         width: 56px;
-        height: auto;" alt="^-^" cache-control="max-age=86400" class="header-img" src="/blog/img/frog.png" width="10%"></img>
+        height: auto;" alt="^-^" cache-control="max-age=86400" class="header-img" src="/img/frog.png" width="10%"></img>
         <div class="header-content">
-            <a class="logo" href="/blog/">HappyFishingTime</a> 
+            <a class="logo" href="/">HappyFishingTime</a> 
             <span class="description">摸鱼幻♂想♂乡，论文、技术总结与牢骚</span> 
         </div>
         
@@ -93,23 +93,23 @@
     <ul class="nav">
         
             
-                <li><a href="/blog/">首页</a></li>
+                <li><a href="/">首页</a></li>
             
         
             
-                <li><a href="/blog/list/">文章</a></li>
+                <li><a href="/list/">文章</a></li>
             
         
             
-                <li><a href="/blog/tags/">标签</a></li>
+                <li><a href="/tags/">标签</a></li>
             
         
             
-                <li><a href="/blog/categories/">分类</a></li>
+                <li><a href="/categories/">分类</a></li>
             
         
             
-                <li><a href="/blog/project/">摸鱼项目</a></li>
+                <li><a href="/project/">摸鱼项目</a></li>
             
         
     </ul>
@@ -160,13 +160,13 @@
 <li><strong>L0 -&gt; L1</strong></li>
 </ul>
 <p>当L0sstable的数量到达预定值时触发，一般会选中<strong>全部</strong>L0层的sstable进行compaction，向L1层重叠的sstable合并。</p>
-<p><a href="/blog/img/2023-9/L0.png" title="L0" class="gallery-item" style="box-shadow: none;"> <img src="/blog/img/2023-9/L0.png" alt="L0"></a></p>
+<p><a href="/img/2023-9/L0.png" title="L0" class="gallery-item" style="box-shadow: none;"> <img src="/img/2023-9/L0.png" alt="L0"></a></p>
 <p>这里的合并一般是单线程的，因此可能是瓶颈，也有应对策略，叫做sub-compaction，这种应对策略不是专为此种场景设计的，所有比较重的compaction任务都可以做sub-compaction拆分，但是此功能是默认关闭的，详见后面。</p>
 <ul>
 <li><strong>Ln -&gt; Ln+1</strong></li>
 </ul>
 <p>如果Ln层的sstable超过了预定的size，则会选择<strong>至少一个</strong>继续向下compaction，这个过程是可以并发的，如图：</p>
-<p><a href="/blog/img/2023-9/L1.png" title="L1" class="gallery-item" style="box-shadow: none;"> <img src="/blog/img/2023-9/L1.png" alt="L1"></a></p>
+<p><a href="/img/2023-9/L1.png" title="L1" class="gallery-item" style="box-shadow: none;"> <img src="/img/2023-9/L1.png" alt="L1"></a></p>
 <p>最大线程数是由 <code>max_background_compactions</code>来控制的。</p>
 <p>在代码实现上，compaction的触发是依赖计算<strong>分数</strong>来确定的：</p>
 <ul>
@@ -198,18 +198,18 @@
 <p>此时需要设置L0层的size（max_bytes_for_level_base ），层数（num_levels），最高层的size（level n size），计算公式为</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Target_Size(Ln-1) = Target_Size(Ln) / max_bytes_for_level_multiplier</span><br></pre></td></tr></table></figure></li>
 </ul>
-<h3 id="1-x-Sub-compaction"><a href="#1-x-Sub-compaction" class="headerlink" title="1.x Sub-compaction"></a>1.x Sub-compaction</h3><p><a href="/blog/img/2023-9/subcompaction.png" title="subcompaction" class="gallery-item" style="box-shadow: none;"> <img src="/blog/img/2023-9/subcompaction.png" alt="subcompaction"></a></p>
+<h3 id="1-x-Sub-compaction"><a href="#1-x-Sub-compaction" class="headerlink" title="1.x Sub-compaction"></a>1.x Sub-compaction</h3><p><a href="/img/2023-9/subcompaction.png" title="subcompaction" class="gallery-item" style="box-shadow: none;"> <img src="/img/2023-9/subcompaction.png" alt="subcompaction"></a></p>
 <p><a target="_blank" rel="noopener" href="https://github.com/facebook/rocksdb/wiki/Subcompaction">官方介绍</a>说的有点模糊，对于sub-compaction的设计有版本的迭代，所以这里参考了<a target="_blank" rel="noopener" href="https://www.modb.pro/db/58495">这篇博客</a>先解释大概原理</p>
 <p>v7.6之前大致流程如下：</p>
 <ol>
 <li>选中需要compaction的L0、L1文件</li>
 <li>生成并排序bounds，如图，生成后根据slice <strong>排序</strong> 并 <strong>去重</strong> 得到彼此独立的边界</li>
 </ol>
-<p><a href="/blog/img/2023-9/bound.png" title="bound" class="gallery-item" style="box-shadow: none;"> <img src="/blog/img/2023-9/bound.png" alt="bound"></a></p>
+<p><a href="/img/2023-9/bound.png" title="bound" class="gallery-item" style="box-shadow: none;"> <img src="/img/2023-9/bound.png" alt="bound"></a></p>
 <ol start="3">
 <li>生成ranges，如图，将range的边界和文件的总大小一同保存到RangeWithSize，同时计算本次合并的总数据量sum</li>
 </ol>
-<p><a href="/blog/img/2023-9/ranges.png" title="rangs" class="gallery-item" style="box-shadow: none;"> <img src="/blog/img/2023-9/ranges.png" alt="rangs"></a></p>
+<p><a href="/img/2023-9/ranges.png" title="rangs" class="gallery-item" style="box-shadow: none;"> <img src="/img/2023-9/ranges.png" alt="rangs"></a></p>
 <ol start="4">
 <li><p>确定subconpactions，可以理解为生成实际的任务数量&#x2F;sub-compaction的线程数，据博客介绍，这个值基于三个参考值：</p>
 <ul>
@@ -285,11 +285,11 @@
                 <span>打上标签:
                     
                     
-                        <a href='/blog/tags/RocksDB/'>
+                        <a href='/tags/RocksDB/'>
                             RocksDB
                         </a>
                     
-                        <a href='/blog/tags/compaction/'>
+                        <a href='/tags/compaction/'>
                             compaction
                         </a>
                     
@@ -299,7 +299,7 @@
                 <span>归为分类:
                     
                     
-                        <a href='/blog/categories/%E6%95%A3%E8%A3%85%E6%8A%80%E6%9C%AF/'>
+                        <a href='/categories/%E6%95%A3%E8%A3%85%E6%8A%80%E6%9C%AF/'>
                             散装技术
                         </a>
                     
@@ -358,23 +358,23 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js" type="text/javascript" ></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tocify/1.9.0/javascripts/jquery.tocify.min.js" type="text/javascript" ></script>
         
-<script src="/blog/js/toc.js"></script>
+<script src="/js/toc.js"></script>
 
     
 
     
-<script src="/blog/js/randomHeaderContent.js"></script>
+<script src="/js/randomHeaderContent.js"></script>
 
     <!--回到顶部按钮-->
     
         
-<script src="/blog/js/returnToTop.js"></script>
+<script src="/js/returnToTop.js"></script>
 
     
 
     
         
-<script src="/blog/js/returnToLastPage.js"></script>
+<script src="/js/returnToLastPage.js"></script>
 
     
 
@@ -382,7 +382,7 @@
 
 
 
-<script src="/blog/js/lightgallery.min.js"></script>
+<script src="/js/lightgallery.min.js"></script>
 
 
 
