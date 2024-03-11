@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    
+    <head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport" />
+    <meta name="description" content="Raft查漏补缺-好久没看而忘记的知识" />
+    <meta name="hexo-theme-A4" content="v1.8.8" />
+    <link rel="alternate icon" type="image/webp" href="/blog/img/frog.png">
+    <title>HappyFishingTime | 快乐的摸鱼时刻</title>
+
+    
+        
+<link rel="stylesheet" href="/blog/css/highlight/style1.css">
+
+        
+<link rel="stylesheet" href="/blog/css/reset.css">
+
+        
+<link rel="stylesheet" href="/blog/css/markdown.css">
+
+        
+<link rel="stylesheet" href="/blog/css/fonts.css">
+ 
+         <!--注意：首页既不是post也不是page-->
+        
+        
+        
+<link rel="stylesheet" href="/blog/css/ui.css">
+ 
+        
+<link rel="stylesheet" href="/blog/css/style.css">
+
+
+        
+            <!--返回顶部css-->
+            
+<link rel="stylesheet" href="/blog/css/returnToTop.css">
+
+            
+<link rel="stylesheet" href="/blog/css/unicons.css">
+
+        
+        
+            <!--目录-->
+            
+<link rel="stylesheet" href="/blog/css/toc.css">
+
+        
+    
+
+    
+        
+<link rel="stylesheet" href="/blog/css/returnToLastPage.css">
+
+    
+    
+   
+<link rel="stylesheet" href="/blog/css/lightgallery.min.css">
+
+
+<meta name="generator" content="Hexo 7.1.1"></head>
+    
+    
+    <body>
+        
+            <div class="left-toc-container">
+                <nav id="toc" class="bs-docs-sidebar"></nav>
+            </div>
+        
+        <div class="paper">
+            
+            
+            
+            
+                <div class="shadow-drop-2-bottom paper-main">
+                    
+
+
+<div class="header">
+    <div class="header-container">
+        <img style="
+        width: 56px;
+        height: auto;" alt="^-^" cache-control="max-age=86400" class="header-img" src="/blog/img/frog.png" width="10%"></img>
+        <div class="header-content">
+            <a class="logo" href="/blog/">HappyFishingTime</a> 
+            <span class="description">摸鱼幻♂想♂乡，论文、技术总结与牢骚</span> 
+        </div>
+        
+    </div>
+    
+   
+    <ul class="nav">
+        
+            
+                <li><a href="/blog/">首页</a></li>
+            
+        
+            
+                <li><a href="/blog/list/">文章</a></li>
+            
+        
+            
+                <li><a href="/blog/tags/">标签</a></li>
+            
+        
+            
+                <li><a href="/blog/categories/">分类</a></li>
+            
+        
+            
+                <li><a href="/blog/project/">摸鱼项目</a></li>
+            
+        
+    </ul>
+</div> 
+        
+                    
+                    
+
+                    
+                    
+                    
+                    <!--说明是文章post页面-->
+                    
+                        <div class="post-main">
+
+    
+        <div class="post-main-title">
+            Raft查漏补缺-好久没看而忘记的知识
+        </div>
+      
+    
+
+    <div class="post-md">
+        
+            
+                <ol class="post-toc"><li class="post-toc-item post-toc-level-1"><a class="post-toc-link" href="#Raft%E6%9F%A5%E6%BC%8F%E8%A1%A5%E7%BC%BA"><span class="post-toc-text">Raft查漏补缺</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#1-%E7%8A%B6%E6%80%81%E6%9C%BA%E8%BD%AC%E7%A7%BB%E5%9B%BE"><span class="post-toc-text">1. 状态机转移图</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#2-%E9%98%BB%E6%AD%A2%E9%80%89%E7%A5%A8%E7%93%9C%E5%88%86%EF%BC%88%E6%88%96%E8%80%85%E8%AF%B4%E8%A7%A3%E5%86%B3%E6%B4%BB%E9%94%81%E9%97%AE%E9%A2%98%EF%BC%89"><span class="post-toc-text">2. 阻止选票瓜分（或者说解决活锁问题）</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#3-%E5%BD%B1%E5%93%8D%E6%AD%A3%E5%B8%B8%E9%80%89%E4%B8%BE%E8%BF%87%E7%A8%8B%E7%9A%84%E6%83%85%E5%86%B5"><span class="post-toc-text">3. 影响正常选举过程的情况</span></a></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#4-%E6%97%A5%E5%BF%97"><span class="post-toc-text">4. 日志</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E6%97%A5%E5%BF%97%E5%8C%B9%E9%85%8D%E7%89%B9%E6%80%A7"><span class="post-toc-text">日志匹配特性</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E6%97%A5%E5%BF%97%E5%90%8C%E6%AD%A5"><span class="post-toc-text">日志同步</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#%E6%97%A5%E5%BF%97%E6%8F%90%E4%BA%A4"><span class="post-toc-text">日志提交</span></a></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#5-%E6%88%90%E5%91%98%E5%8F%98%E6%9B%B4"><span class="post-toc-text">5. 成员变更</span></a></li></ol></li></ol>
+            
+        
+        <link rel="stylesheet" type="text/css" href="https://jsd.onmicrosoft.cn/npm/hexo-theme-a4@latest/source/css/lightgallery.min.css" /><div class=".article-gallery"><p><strong>写在前面：</strong></p>
+<p>腾讯TDSQL管控二面，虽然整体答得还可以，但是raft的记忆缺失比较严重，尤其是联合一致部分，我只记得三个状态，细节忘记了，这里再查漏补缺，回忆一下raft。</p>
+<h1 id="Raft查漏补缺"><a href="#Raft查漏补缺" class="headerlink" title="Raft查漏补缺"></a>Raft查漏补缺</h1><h2 id="1-状态机转移图"><a href="#1-状态机转移图" class="headerlink" title="1. 状态机转移图"></a>1. 状态机转移图</h2><p><a href="/blog/img/2023-9/state_mechine.png" title="state_mechine" class="gallery-item" style="box-shadow: none;"> <img src="/blog/img/2023-9/state_mechine.png" alt="state_mechine"></a></p>
+<h2 id="2-阻止选票瓜分（或者说解决活锁问题）"><a href="#2-阻止选票瓜分（或者说解决活锁问题）" class="headerlink" title="2. 阻止选票瓜分（或者说解决活锁问题）"></a>2. 阻止选票瓜分（或者说解决活锁问题）</h2><ul>
+<li>随机超时，使不同的candidate发起选举的时间错开</li>
+<li>pre-vote</li>
+</ul>
+<h2 id="3-影响正常选举过程的情况"><a href="#3-影响正常选举过程的情况" class="headerlink" title="3. 影响正常选举过程的情况"></a>3. 影响正常选举过程的情况</h2><ul>
+<li>candidate收到了其他leader的心跳<ul>
+<li>item大于自身则回到follower</li>
+<li>item小于则拒绝</li>
+</ul>
+</li>
+<li>选票被瓜分，见上</li>
+<li>candidate日志不全，缺少了已经提交的日志，即follower的日志比candidate新<ul>
+<li>拒绝</li>
+</ul>
+</li>
+<li>在新旧配置交接时，被移除的节点由于没有收到心跳会超时自增任期成为candidate，然后导致被移除的节点成为了leader<ul>
+<li>引入类似lease的机制，在收到leader心跳后的一段时间内不会接受其他leader的心跳</li>
+</ul>
+</li>
+</ul>
+<h2 id="4-日志"><a href="#4-日志" class="headerlink" title="4. 日志"></a>4. 日志</h2><h3 id="日志匹配特性"><a href="#日志匹配特性" class="headerlink" title="日志匹配特性"></a>日志匹配特性</h3><ul>
+<li>如果不同日志中的两个条目拥有相同的索引和任期号，那么他们存储了相同的指令。</li>
+<li>如果不同日志中的两个条目拥有相同的索引和任期号，那么他们之前的所有日志条目也都相同。</li>
+</ul>
+<h3 id="日志同步"><a href="#日志同步" class="headerlink" title="日志同步"></a>日志同步</h3><p>找到最大匹配的日志，之后的日志强行与leader同步。</p>
+<h3 id="日志提交"><a href="#日志提交" class="headerlink" title="日志提交"></a>日志提交</h3><ul>
+<li>只能提交当前任期的日志，旧任期的日志通过复制来达成一致。</li>
+</ul>
+<p>原因是旧任期的日志即使被复制到了多数也可能被新的leader覆盖，如图所示：</p>
+<p><a href="/blog/img/2023-9/log_safty.png" title="log_safty" class="gallery-item" style="box-shadow: none;"> <img src="/blog/img/2023-9/log_safty.png" alt="log_safty"></a></p>
+<p>在 (a) 中，S1 是 leader ，部分地复制了索引位置 2 的日志条目。</p>
+<p>在 (b) 中，S1 崩溃了，然后 S5 在任期 3 中通过 S3、S4 和自己的选票赢得选举，然后从客户端接收了一条不一样的日志条目放在了索引 2 处。</p>
+<p>然后到 (c)，S5 又崩溃了；S1 重新启动，选举成功，继续复制日志。此时，来自任期 2 的那条日志已经被复制到了集群中的大多数机器上，但是还没有被提交。</p>
+<p>如果 S1 在 (d) 中又崩溃了，S5 可以重新被选举成功（通过来自 S2，S3 和 S4 的选票），然后覆盖了他们在索引 2 处的日志。但是，在崩溃之前，如果 S1 在自己的任期里复制了日志条目到大多数机器上，</p>
+<p>如 (e) 中，然后这个条目就会被提交（S5 就不可能选举成功）。 在这种情况下，之前的所有日志也被提交了。</p>
+<ul>
+<li>联合一致日志计算提交时，如果leader不在新的配置中，不把自身计算在其中</li>
+</ul>
+<h2 id="5-成员变更"><a href="#5-成员变更" class="headerlink" title="5. 成员变更"></a>5. 成员变更</h2><p>联合一致（联合共识）算法</p>
+<p>如果将配置变更操作交由一条日志来做的话会存在图中的问题：</p>
+<p><a href="/blog/img/2023-9/change_conflict.png" title="change_conflict" class="gallery-item" style="box-shadow: none;"> <img src="/blog/img/2023-9/change_conflict.png" alt="change_conflict"></a></p>
+<p>在箭头所示的时间节点，S1和S2可以在旧配置下选出leader，S3, 4, 5可以在新配置下选出leader，这样就发生了脑裂。</p>
+<p>解决方法就是引入联合一致态：</p>
+<p><a href="/blog/img/2023-9/join_consist.png" title="join_consist" class="gallery-item" style="box-shadow: none;"> <img src="/blog/img/2023-9/join_consist.png" alt="join_consist"></a></p>
+<p>大致的流程：</p>
+<ul>
+<li>leader收到新配置后，会添加C-old,new日志，添加了C-old, new日志的节点会用该配置来做决策。又因为leader有C-old, new日志，因此C-old, new会按照新配置进行日志commit判定<ul>
+<li>如果leader中途挂了，那么新配置可能生效也可能不生效，取决于新leader是否有这条日志</li>
+</ul>
+</li>
+<li>C-old, new被提交，就能保证有新配置的节点一定能成为leader，因此就可以进入下一个阶段</li>
+<li>leader添加C-new日志，在C-new提交后，如果当前leader不在新配置中，则在此时退出</li>
+</ul>
+</div><script src="https://jsd.onmicrosoft.cn/npm/hexo-theme-a4@latest/source/js/lightgallery.min.js"></script><script>if (typeof lightGallery !== 'undefined') {
+        var options = {
+            selector: '.gallery-item'
+        };
+        lightGallery(document.getElementsByClassName('.article-gallery')[0], options);
+        }</script>
+    </div>
+
+    <div class="post-meta">
+        <i>
+        
+            <span>2023-09-04</span>
+            
+                <span>该篇文章被 deadlinefen</span>
+            
+            
+                <span>打上标签:
+                    
+                    
+                        <a href='/blog/tags/Raft/'>
+                            Raft
+                        </a>
+                    
+                        <a href='/blog/tags/log/'>
+                            log
+                        </a>
+                    
+                </span>
+             
+             
+                <span>归为分类:
+                    
+                    
+                        <a href='/blog/categories/%E6%95%A3%E8%A3%85%E6%8A%80%E6%9C%AF/'>
+                            散装技术
+                        </a>
+                    
+                </span>
+            
+        
+        </i>
+    </div>
+    <br>
+    
+    <!-- <div class="post-footer-pre-next">
+        <span>上一篇：<a href=""></a></span>
+        <span class="post-footer-pre-next-last-span-right">上一篇：<a href=""></a></span>
+    </div> -->
+
+    
+        
+
+     
+</div>
+
+
+
+                                      
+                    
+                    
+                    <div class="footer">
+    
+        <span> 
+            © 1949-2024 Powered by deadlinefen, China 
+
+            
+                
+
+            
+        </span>
+    
+</div>
+<!--这是指一条线往下的内容-->
+<div class="footer-last">
+    
+            <span>持续做有积累的事情</span>
+            
+                <span class="footer-last-span-right"><i>本站由<a target="_blank" rel="noopener" href="https://hexo.io/zh-cn/index.html">Hexo</a>驱动｜使用<a target="_blank" rel="noopener" href="https://github.com/HiNinoJay/hexo-theme-A4">Hexo-theme-A4</a>主题</i></span>
+            
+    
+</div>
+
+
+    
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+
+    <!--目录-->
+    
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.7.2/jquery.min.js" type="text/javascript" ></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js" type="text/javascript" ></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tocify/1.9.0/javascripts/jquery.tocify.min.js" type="text/javascript" ></script>
+        
+<script src="/blog/js/toc.js"></script>
+
+    
+
+    
+<script src="/blog/js/randomHeaderContent.js"></script>
+
+    <!--回到顶部按钮-->
+    
+        
+<script src="/blog/js/returnToTop.js"></script>
+
+    
+
+    
+        
+<script src="/blog/js/returnToLastPage.js"></script>
+
+    
+
+
+
+
+
+<script src="/blog/js/lightgallery.min.js"></script>
+
+
+
+                </div>
+            
+            
+                <!-- 回到顶部的按钮-->  
+                <div class="progress-wrap shadow-drop-2-bottom">
+                    <svg class="progress-circle svg-content" width="100%" height="100%" viewBox="-1 -1 102 102">
+                        <path d="M50,1 a49,49 0 0,1 0,98 a49,49 0 0,1 0,-98"/>
+                    </svg>
+                </div>
+            
+            
+                <!-- 返回的按钮-->  
+                <div class="return-to-last-progress-wrap shadow-drop-2-bottom">
+                    <svg class="progress-circle svg-content" width="100%" height="100%" viewBox="-1 -1 102 102">
+                        <path d="M50,1 a49,49 0 0,1 0,98 a49,49 0 0,1 0,-98"/>
+                    </svg>
+                </div>
+            
+    </body>
+
+
+    <!--暗黑模式-->
+    <script src="/js/darkmode-js.min.js"></script>
+    <script>
+        function addDarkmodeWidget() {
+        const options = {
+            bottom: '53px', // default: '32px'
+            right: 'unset', // default: '32px'
+            left: '42px', // default: 'unset'
+            time: '0.3s', // default: '0.3s'
+            mixColor: '#fff', // default: '#fff'
+            backgroundColor: ' #e4e4e4 ',  // default: '#fff'
+            buttonColorDark: '#100f2c',  // default: '#100f2c'
+            buttonColorLight: '#fff', // default: '#fff'
+            saveInCookies: true, // default: true,
+            label: '🌓', // default: ''
+            autoMatchOsTheme: true // default: true
+        }
+    
+        const darkmode = new Darkmode(options);
+        darkmode.showWidget();
+        
+        }
+        window.addEventListener('load', addDarkmodeWidget);
+    </script>
+  
+</html>

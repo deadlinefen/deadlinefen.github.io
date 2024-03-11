@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    
+    <head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport" />
+    <meta name="description" content="LSM再学习-Compaction与Write stalls" />
+    <meta name="hexo-theme-A4" content="v1.8.8" />
+    <link rel="alternate icon" type="image/webp" href="/blog/img/frog.png">
+    <title>HappyFishingTime | 快乐的摸鱼时刻</title>
+
+    
+        
+<link rel="stylesheet" href="/blog/css/highlight/style1.css">
+
+        
+<link rel="stylesheet" href="/blog/css/reset.css">
+
+        
+<link rel="stylesheet" href="/blog/css/markdown.css">
+
+        
+<link rel="stylesheet" href="/blog/css/fonts.css">
+ 
+         <!--注意：首页既不是post也不是page-->
+        
+        
+        
+<link rel="stylesheet" href="/blog/css/ui.css">
+ 
+        
+<link rel="stylesheet" href="/blog/css/style.css">
+
+
+        
+            <!--返回顶部css-->
+            
+<link rel="stylesheet" href="/blog/css/returnToTop.css">
+
+            
+<link rel="stylesheet" href="/blog/css/unicons.css">
+
+        
+        
+            <!--目录-->
+            
+<link rel="stylesheet" href="/blog/css/toc.css">
+
+        
+    
+
+    
+        
+<link rel="stylesheet" href="/blog/css/returnToLastPage.css">
+
+    
+    
+   
+<link rel="stylesheet" href="/blog/css/lightgallery.min.css">
+
+
+<meta name="generator" content="Hexo 7.1.1"></head>
+    
+    
+    <body>
+        
+            <div class="left-toc-container">
+                <nav id="toc" class="bs-docs-sidebar"></nav>
+            </div>
+        
+        <div class="paper">
+            
+            
+            
+            
+                <div class="shadow-drop-2-bottom paper-main">
+                    
+
+
+<div class="header">
+    <div class="header-container">
+        <img style="
+        width: 56px;
+        height: auto;" alt="^-^" cache-control="max-age=86400" class="header-img" src="/blog/img/frog.png" width="10%"></img>
+        <div class="header-content">
+            <a class="logo" href="/blog/">HappyFishingTime</a> 
+            <span class="description">摸鱼幻♂想♂乡，论文、技术总结与牢骚</span> 
+        </div>
+        
+    </div>
+    
+   
+    <ul class="nav">
+        
+            
+                <li><a href="/blog/">首页</a></li>
+            
+        
+            
+                <li><a href="/blog/list/">文章</a></li>
+            
+        
+            
+                <li><a href="/blog/tags/">标签</a></li>
+            
+        
+            
+                <li><a href="/blog/categories/">分类</a></li>
+            
+        
+            
+                <li><a href="/blog/project/">摸鱼项目</a></li>
+            
+        
+    </ul>
+</div> 
+        
+                    
+                    
+
+                    
+                    
+                    
+                    <!--说明是文章post页面-->
+                    
+                        <div class="post-main">
+
+    
+        <div class="post-main-title">
+            LSM再学习-Compaction与Write stalls
+        </div>
+      
+    
+
+    <div class="post-md">
+        
+            
+                <ol class="post-toc"><li class="post-toc-item post-toc-level-1"><a class="post-toc-link" href="#LSM%E5%86%8D%E5%AD%A6%E4%B9%A0"><span class="post-toc-text">LSM再学习</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#1-compaction%E7%9A%84%E7%B1%BB%E5%9E%8B"><span class="post-toc-text">1. compaction的类型</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#1-1-Level-compaction"><span class="post-toc-text">1.1 Level compaction</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#1-x-Sub-compaction"><span class="post-toc-text">1.x Sub-compaction</span></a></li></ol></li></ol></li><li class="post-toc-item post-toc-level-1"><a class="post-toc-link" href="#2-%E5%86%99%E5%BB%B6%E8%BF%9F-Write-stalls"><span class="post-toc-text">2. 写延迟(Write stalls)</span></a></li></ol>
+            
+        
+        <link rel="stylesheet" type="text/css" href="https://jsd.onmicrosoft.cn/npm/hexo-theme-a4@latest/source/css/lightgallery.min.css" /><div class=".article-gallery"><p><strong>写在前面：</strong></p>
+<p>面试和组里的同门撞车了，一般一次招聘不会要同一来源的两个人，作为后来者，感觉面试官面到我已经完全不认真了，问我的问题也比问同门的难几个level，而且完全没在听我的自我介绍，在我讲实习的时候也在办公没理我，甚至还让我等了他好久。</p>
+<p>不过他问的一些问题虽然常规，却也确实问住我了，实习缝纫机踩久了，KV存储引擎忘完了，在此做一下反思学习，不会&#x2F;忘了的问题：</p>
+<ol>
+<li>写延迟的成因，没回答全，只记得再write中的makeroom函数中，具体有哪些已经忘记了，只回答了leveldb的immutable memtable的下刷、L0层sstable过多。</li>
+<li>LSM tree为什么要设置为高于两层，这么设计的目的是什么？</li>
+<li>c++ deque的底层实现</li>
+</ol>
+<h1 id="LSM再学习"><a href="#LSM再学习" class="headerlink" title="LSM再学习"></a>LSM再学习</h1><p>以我的理解而言，以LSM tree作为存储结构的引擎，提高性能的要点在于log与sort的平衡，sort的核心在于compaction</p>
+<h2 id="1-compaction的类型"><a href="#1-compaction的类型" class="headerlink" title="1. compaction的类型"></a>1. compaction的类型</h2><p>rocksdb支持多种不同的compaction算法：Leveled compaction、Tiered compaction、FIFO compaction</p>
+<h3 id="1-1-Level-compaction"><a href="#1-1-Level-compaction" class="headerlink" title="1.1 Level compaction"></a>1.1 Level compaction</h3><p>参考自<a target="_blank" rel="noopener" href="https://github.com/facebook/rocksdb/wiki/Leveled-Compaction">rocksdb的wiki</a></p>
+<p>在Disk 里面维持了多级level的SStable，而且每层维持“<strong>唯一一个</strong>” <strong>“Run”</strong>。</p>
+<p>Run的两个条件：</p>
+<ol>
+<li>SSTable有序</li>
+<li>SSTable的range没有交集</li>
+</ol>
+<p>层的划分是以size为标准的，L<del>n+1</del>.size() &#x3D; 10 * L<del>n</del>.size()，当层中sstable的总size超过大小则触发向下的compaction</p>
+<ul>
+<li><strong>L0 -&gt; L1</strong></li>
+</ul>
+<p>当L0sstable的数量到达预定值时触发，一般会选中<strong>全部</strong>L0层的sstable进行compaction，向L1层重叠的sstable合并。</p>
+<p><a href="/blog/img/2023-9/L0.png" title="L0" class="gallery-item" style="box-shadow: none;"> <img src="/blog/img/2023-9/L0.png" alt="L0"></a></p>
+<p>这里的合并一般是单线程的，因此可能是瓶颈，也有应对策略，叫做sub-compaction，这种应对策略不是专为此种场景设计的，所有比较重的compaction任务都可以做sub-compaction拆分，但是此功能是默认关闭的，详见后面。</p>
+<ul>
+<li><strong>Ln -&gt; Ln+1</strong></li>
+</ul>
+<p>如果Ln层的sstable超过了预定的size，则会选择<strong>至少一个</strong>继续向下compaction，这个过程是可以并发的，如图：</p>
+<p><a href="/blog/img/2023-9/L1.png" title="L1" class="gallery-item" style="box-shadow: none;"> <img src="/blog/img/2023-9/L1.png" alt="L1"></a></p>
+<p>最大线程数是由 <code>max_background_compactions</code>来控制的。</p>
+<p>在代码实现上，compaction的触发是依赖计算<strong>分数</strong>来确定的：</p>
+<ul>
+<li><p>Score(L0) &#x3D; file_num &#x2F; max(<code>level0_file_num_compaction_trigger</code>, <code>max_bytes_for_level_base</code>)</p>
+<p>这两个都是由用户手动设置的，顾名思义。</p>
+</li>
+<li><p>Score(L&gt;0) &#x3D; total_file_size &#x2F; max_bytes_for_level</p>
+</li>
+</ul>
+<p>综上，L0层触发compaction的主要来源就是数量超限，L&gt;0的触发来源是size超限，当然，以leveldb为例，还有其他触发compaction的入口，如：</p>
+<ul>
+<li><p>mutable memtable -&gt; imutable memtable -&gt; minor compaction</p>
+</li>
+<li><p>在Get接口中，如果一个文件被访问多次都没命中，就会触发compaction</p>
+<ul>
+<li>在每次get到数据时，会将其访问的上一层的（也可以说是访问的上一个）文件的allowed_seeks - 1，当allowed_seeks归0时，触发compaction</li>
+</ul>
+</li>
+<li><p>手动触发</p>
+</li>
+</ul>
+<p><strong>level file size</strong>的选择</p>
+<p>可以手动，也可以自动（level_compaction_dynamic_level_bytes），据官方说每一层是上一层的10倍最好。</p>
+<ul>
+<li><p>level_compaction_dynamic_level_bytes &#x3D; false</p>
+<p>此时需要设置L0层的size（max_bytes_for_level_base ），倍数（max_bytes_for_level_multiplier），权值（max_bytes_for_level_multiplier_additional），计算公式为</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Target_Size(Ln+1) = Target_Size(Ln) * max_bytes_for_level_multiplier * max_bytes_for_level_multiplier_additional[n]`。`max_bytes_for_level_multiplier_additional</span><br></pre></td></tr></table></figure></li>
+<li><p>level_compaction_dynamic_level_bytes &#x3D; true</p>
+<p>此时需要设置L0层的size（max_bytes_for_level_base ），层数（num_levels），最高层的size（level n size），计算公式为</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Target_Size(Ln-1) = Target_Size(Ln) / max_bytes_for_level_multiplier</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="1-x-Sub-compaction"><a href="#1-x-Sub-compaction" class="headerlink" title="1.x Sub-compaction"></a>1.x Sub-compaction</h3><p><a href="/blog/img/2023-9/subcompaction.png" title="subcompaction" class="gallery-item" style="box-shadow: none;"> <img src="/blog/img/2023-9/subcompaction.png" alt="subcompaction"></a></p>
+<p><a target="_blank" rel="noopener" href="https://github.com/facebook/rocksdb/wiki/Subcompaction">官方介绍</a>说的有点模糊，对于sub-compaction的设计有版本的迭代，所以这里参考了<a target="_blank" rel="noopener" href="https://www.modb.pro/db/58495">这篇博客</a>先解释大概原理</p>
+<p>v7.6之前大致流程如下：</p>
+<ol>
+<li>选中需要compaction的L0、L1文件</li>
+<li>生成并排序bounds，如图，生成后根据slice <strong>排序</strong> 并 <strong>去重</strong> 得到彼此独立的边界</li>
+</ol>
+<p><a href="/blog/img/2023-9/bound.png" title="bound" class="gallery-item" style="box-shadow: none;"> <img src="/blog/img/2023-9/bound.png" alt="bound"></a></p>
+<ol start="3">
+<li>生成ranges，如图，将range的边界和文件的总大小一同保存到RangeWithSize，同时计算本次合并的总数据量sum</li>
+</ol>
+<p><a href="/blog/img/2023-9/ranges.png" title="rangs" class="gallery-item" style="box-shadow: none;"> <img src="/blog/img/2023-9/ranges.png" alt="rangs"></a></p>
+<ol start="4">
+<li><p>确定subconpactions，可以理解为生成实际的任务数量&#x2F;sub-compaction的线程数，据博客介绍，这个值基于三个参考值：</p>
+<ul>
+<li>用户配置的max_subcompaction</li>
+<li>第3步的ranges.size()</li>
+<li>这里不知道是不是作者笔误，他想写的可能是max_output_files &#x3D; sum &#x2F; max_file_size？</li>
+</ul>
+<p>综上：</p>
+<p>subconpactions.size() &#x3D; min(max_subcompaction, ranges.size(), max_output_files)</p>
+</li>
+<li><p>任务分配，根据subconpactions.size()确定每一个线程应该分到多大的size，根据size划分最终的key range，生成任务，交给compaction线程去做操作</p>
+</li>
+</ol>
+<p>根据官方的wiki所述，在v7.6之后采用了一种分区的逻辑(The logic for partitioning)来优化sub-compaction，将输入文件切成最多128个partitions，在执行上述操作</p>
+<h1 id="2-写延迟-Write-stalls"><a href="#2-写延迟-Write-stalls" class="headerlink" title="2. 写延迟(Write stalls)"></a>2. 写延迟(Write stalls)</h1><p>官方的说明文档<a target="_blank" rel="noopener" href="https://github.com/facebook/rocksdb/wiki/Write-Stalls">在这里</a></p>
+<ul>
+<li>背景</li>
+</ul>
+<p>rocksdb在下刷或compaction无法跟上写入速度时会受控减慢写入速度，如果不这样做的话会造成空间放大和读放大</p>
+<p>这两个放大的主要成因是数据没有及时的被推到更高层，导致相同数据的不同版本大量存在，造成空间放大，各层尤其是L0层文件数量变多导致了读放大。</p>
+<p>写延迟的触发检测是列族级别的，但一旦触发就会影响整个db。当触发了写延迟时，rocksdb将速度降低到delayed_write_rate（通常是在写之前sleep 1ms），当情况很糟糕时，写入会低于这个值，甚至停止写入。</p>
+<ul>
+<li>写延迟的原因</li>
+</ul>
+<ol>
+<li><p>memtable太多</p>
+<p>rocksdb允许多个memtable存在，其实就是在一定程度上允许minor compaction延迟，但是当immutable memtable过多时会占用内存、降低查找效率，immutable memtable的最大数量受到参数 <code>max_write_buffer_number</code>控制，当memtable数量为n，且 <code>max_write_buffer_number</code> &gt; 3时：</p>
+<ul>
+<li>3 &lt; n &lt; max_write_buffer_number，此时会进行写延迟</li>
+<li>n &gt;&#x3D; max_write_buffer_number，此时会写停止</li>
+</ul>
+</li>
+<li><p>L0的文件过多</p>
+<p>当L0文件数量达到参数 <code>level0_slowdown_writes_trigger</code>时，会进行写延迟降速，当到达 <code>level0_stop_writes_trigger</code>时，会直接停止写入，等待L0-&gt;L1的compaction结束</p>
+</li>
+<li><p>有太多等待compaction的字节</p>
+<p>当估算的compaction字节到达 <code>soft_pending_compaction_bytes</code>时，会进行写延迟，到达 <code>hard_pending_compaction_bytes</code>时，会完全停止写入</p>
+</li>
+</ol>
+<ul>
+<li>缓解写延迟的方法</li>
+</ul>
+<ol>
+<li>如果是下刷引起的写延迟：<ul>
+<li>增多 <code>max_background_jobs</code>，增多下刷线程数</li>
+<li>调大memtable的最大数量（<code>max_write_buffer_number</code>）以减小immtable memtable的size</li>
+</ul>
+</li>
+<li>如果是L0文件过多或待compaction的字节太多：<ul>
+<li>增多 <code>max_background_jobs</code>，增多下刷线程数</li>
+<li>调大 <code>write_buffer_size</code> 以得到更大的memtable来减小写放大</li>
+<li>调大 <code>min_write_buffer_number_to_merge</code></li>
+</ul>
+</li>
+</ol>
+<p>其他的方法就</p>
+</div><script src="https://jsd.onmicrosoft.cn/npm/hexo-theme-a4@latest/source/js/lightgallery.min.js"></script><script>if (typeof lightGallery !== 'undefined') {
+        var options = {
+            selector: '.gallery-item'
+        };
+        lightGallery(document.getElementsByClassName('.article-gallery')[0], options);
+        }</script>
+    </div>
+
+    <div class="post-meta">
+        <i>
+        
+            <span>2023-09-01</span>
+            
+                <span>该篇文章被 deadlinefen</span>
+            
+            
+                <span>打上标签:
+                    
+                    
+                        <a href='/blog/tags/RocksDB/'>
+                            RocksDB
+                        </a>
+                    
+                        <a href='/blog/tags/compaction/'>
+                            compaction
+                        </a>
+                    
+                </span>
+             
+             
+                <span>归为分类:
+                    
+                    
+                        <a href='/blog/categories/%E6%95%A3%E8%A3%85%E6%8A%80%E6%9C%AF/'>
+                            散装技术
+                        </a>
+                    
+                </span>
+            
+        
+        </i>
+    </div>
+    <br>
+    
+    <!-- <div class="post-footer-pre-next">
+        <span>上一篇：<a href=""></a></span>
+        <span class="post-footer-pre-next-last-span-right">上一篇：<a href=""></a></span>
+    </div> -->
+
+    
+        
+
+     
+</div>
+
+
+
+                                      
+                    
+                    
+                    <div class="footer">
+    
+        <span> 
+            © 1949-2024 Powered by deadlinefen, China 
+
+            
+                
+
+            
+        </span>
+    
+</div>
+<!--这是指一条线往下的内容-->
+<div class="footer-last">
+    
+            <span>持续做有积累的事情</span>
+            
+                <span class="footer-last-span-right"><i>本站由<a target="_blank" rel="noopener" href="https://hexo.io/zh-cn/index.html">Hexo</a>驱动｜使用<a target="_blank" rel="noopener" href="https://github.com/HiNinoJay/hexo-theme-A4">Hexo-theme-A4</a>主题</i></span>
+            
+    
+</div>
+
+
+    
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+
+    <!--目录-->
+    
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.7.2/jquery.min.js" type="text/javascript" ></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js" type="text/javascript" ></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tocify/1.9.0/javascripts/jquery.tocify.min.js" type="text/javascript" ></script>
+        
+<script src="/blog/js/toc.js"></script>
+
+    
+
+    
+<script src="/blog/js/randomHeaderContent.js"></script>
+
+    <!--回到顶部按钮-->
+    
+        
+<script src="/blog/js/returnToTop.js"></script>
+
+    
+
+    
+        
+<script src="/blog/js/returnToLastPage.js"></script>
+
+    
+
+
+
+
+
+<script src="/blog/js/lightgallery.min.js"></script>
+
+
+
+                </div>
+            
+            
+                <!-- 回到顶部的按钮-->  
+                <div class="progress-wrap shadow-drop-2-bottom">
+                    <svg class="progress-circle svg-content" width="100%" height="100%" viewBox="-1 -1 102 102">
+                        <path d="M50,1 a49,49 0 0,1 0,98 a49,49 0 0,1 0,-98"/>
+                    </svg>
+                </div>
+            
+            
+                <!-- 返回的按钮-->  
+                <div class="return-to-last-progress-wrap shadow-drop-2-bottom">
+                    <svg class="progress-circle svg-content" width="100%" height="100%" viewBox="-1 -1 102 102">
+                        <path d="M50,1 a49,49 0 0,1 0,98 a49,49 0 0,1 0,-98"/>
+                    </svg>
+                </div>
+            
+    </body>
+
+
+    <!--暗黑模式-->
+    <script src="/js/darkmode-js.min.js"></script>
+    <script>
+        function addDarkmodeWidget() {
+        const options = {
+            bottom: '53px', // default: '32px'
+            right: 'unset', // default: '32px'
+            left: '42px', // default: 'unset'
+            time: '0.3s', // default: '0.3s'
+            mixColor: '#fff', // default: '#fff'
+            backgroundColor: ' #e4e4e4 ',  // default: '#fff'
+            buttonColorDark: '#100f2c',  // default: '#100f2c'
+            buttonColorLight: '#fff', // default: '#fff'
+            saveInCookies: true, // default: true,
+            label: '🌓', // default: ''
+            autoMatchOsTheme: true // default: true
+        }
+    
+        const darkmode = new Darkmode(options);
+        darkmode.showWidget();
+        
+        }
+        window.addEventListener('load', addDarkmodeWidget);
+    </script>
+  
+</html>
